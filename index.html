@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MITADT University Chatbot</title>
+  <style>
+    /* Chatbot Container Styles */
+    #chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 350px;
+      height: 500px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      font-family: 'Arial', sans-serif;
+    }
+
+    #chatbot-container.active {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Chatbot Header */
+    .chatbot-header {
+      background-color: #004a8d;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .chatbot-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .chatbot-header button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    /* Chat Area */
+    .chat-area {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background-color: #f5f5f5;
+    }
+
+    .message {
+      margin-bottom: 15px;
+      max-width: 80%;
+      padding: 10px 15px;
+      border-radius: 18px;
+      line-height: 1.4;
+      font-size: 14px;
+      position: relative;
+    }
+
+    .user-message {
+      background-color: #004a8d;
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 5px;
+    }
+
+    .bot-message {
+      background-color: #e5e5ea;
+      color: black;
+      margin-right: auto;
+      border-bottom-left-radius: 5px;
+    }
+
+    /* Related Questions */
+    .related-questions {
+      margin-top: 10px;
+      margin-bottom: 15px;
+    }
+
+    .related-questions-title {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+      padding-left: 5px;
+    }
+
+    .related-question {
+      display: inline-block;
+      background-color: #e5e5ea;
+      color: #004a8d;
+      padding: 5px 10px;
+      margin: 3px;
+      border-radius: 15px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .related-question:hover {
+      background-color: #d5d5da;
+    }
+
+    /* Typing Indicator */
+    .typing-indicator {
+      display: inline-block;
+      padding: 10px 15px;
+      background-color: #e5e5ea;
+      border-radius: 18px;
+      margin-bottom: 15px;
+      border-bottom-left-radius: 5px;
+    }
+
+    .typing-indicator span {
+      height: 8px;
+      width: 8px;
+      background-color: #666;
+      border-radius: 50%;
+      display: inline-block;
+      margin: 0 2px;
+      opacity: 0.4;
+    }
+
+    .typing-indicator span:nth-child(1) {
+      animation: typing 1s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) {
+      animation: typing 1s infinite 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+      animation: typing 1s infinite 0.4s;
+    }
+
+    @keyframes typing {
+      0% {
+        opacity: 0.4;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.4;
+      }
+    }
+
+    /* Input Area */
+    .input-area {
+      display: flex;
+      padding: 10px;
+      background-color: #fff;
+      border-top: 1px solid #ddd;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      outline: none;
+      font-size: 14px;
+    }
+
+    .input-area button {
+      background-color: #004a8d;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      margin-left: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .input-area button:hover {
+      background-color: #003366;
+    }
+
+    /* Chat Button */
+    #chat-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background-color: #004a8d;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 999;
+      border: none;
+      font-size: 24px;
+    }
+
+    #chat-button:hover {
+      background-color: #003366;
+    }
+
+    /* Timestamp */
+    .timestamp {
+      font-size: 11px;
+      color: #999;
+      margin-top: 5px;
+      text-align: right;
+    }
+    #chat-button {
+    z-index: 1001; /* must be higher than chatbot-container's z-index */
+}
+  </style>
+</head>
+
+<body>
+  <!-- Chat Button -->
+  <button id="chat-button">💬</button>
+
+  <!-- Chatbot Container -->
+  <div id="chatbot-container">
+    <div class="chatbot-header">
+      <h3>MITADT University Assistant</h3>
+      <button id="minimize-button">−</button>
+    </div>
+    <div class="chat-area" id="chat-area">
+      <!-- Messages will appear here -->
+      <div class="message bot-message">
+        Welcome to MITADT University! I'm your AI assistant. How can I help you today?
+        <div class="timestamp">Just now</div>
+      </div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type your message here..." autocomplete="off">
+      <button id="send-button">➤</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // DOM Elements
+      const chatButton = document.getElementById('chat-button');
+      const chatbotContainer = document.getElementById('chatbot-container');
+      const minimizeButton = document.getElementById('minimize-button');
+      const chatArea = document.getElementById('chat-area');
+      const userInput = document.getElementById('user-input');
+      const sendButton = document.getElementById('send-button');
+
+      // API Configuration
+      const API_KEY = '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';
+      const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+      const MODEL = 'deepseek/deepseek-chat:free';
+
+      // Conversation history
+      let conversationHistory = [
+        {
+          role: "system",
+          content: "You are an AI assistant for MITADT University. Provide helpful, accurate information about the university including courses, admissions, faculty, campus facilities, events, and other relevant topics. Be friendly and professional."
+        },
+        {
+          role: "assistant",
+          content: "Welcome to MITADT University! I'm your AI assistant. How can I help you today?"
+        }
+      ];
+
+      // Related questions database
+      const relatedQuestionsDB = {
+        "courses": [
+          "What engineering programs do you offer?",
+          "Tell me about your MBA program",
+          "What are the eligibility criteria for B.Tech?",
+          "Do you offer distance learning courses?"
+        ],
+        "admissions": [
+          "When does the admission process start?",
+          "What documents are required for application?",
+          "What is the admission fee structure?",
+          "Do you accept international students?"
+        ],
+        "facilities": [
+          "What hostel facilities are available?",
+          "Can you describe your library resources?",
+          "What sports facilities do you have?",
+          "Is there a medical facility on campus?"
+        ],
+        "default": [
+          "How do I contact the administration?",
+          "What are the university timings?",
+          "Where can I find the academic calendar?",
+          "Does the university provide transportation?"
+        ]
+      };
+
+      // Toggle chatbot visibility
+      chatButton.addEventListener('click', openChatbot);
+      minimizeButton.addEventListener('click', closeChatbot);
+
+      // Send message on button click or Enter key
+      sendButton.addEventListener('click', sendMessage);
+      userInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+          sendMessage();
+        }
+      });
+
+      // Open chatbot function
+      function openChatbot() {
+        chatbotContainer.classList.add('active');
+        chatButton.style.display = 'none';
+      }
+
+      // Close chatbot function
+      function closeChatbot() {
+        chatbotContainer.classList.remove('active');
+        setTimeout(() => {
+          chatButton.style.display = 'flex';
+        }, 300); // wait for animation to complete
+      }
+
+      // Initially show the chatbot
+      setTimeout(() => {
+        openChatbot();
+      }, 1000);
+
+      // Send message function
+      function sendMessage() {
+        const message = userInput.value.trim();
+        if (message === '') return;
+
+        // Add user message to chat and history
+        addMessage(message, 'user');
+        conversationHistory.push({ role: "user", content: message });
+        userInput.value = '';
+
+        // Show typing indicator
+        showTypingIndicator();
+
+        // Call OpenRouter API
+        fetchOpenRouterResponse(message);
+      }
+
+      // Call OpenRouter API
+      function fetchOpenRouterResponse(userMessage) {
+        fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${API_KEY}`,
+            "HTTP-Referer": window.location.href,
+            "X-Title": "MITADT University Chatbot",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            "model": MODEL,
+            "messages": conversationHistory
+          })
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`API request failed with status ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Remove typing indicator
+            removeTypingIndicator();
+
+            // Get the assistant's reply
+            const reply = data.choices[0].message.content;
+
+            // Add bot message to chat and history
+            addMessage(reply, 'bot');
+            conversationHistory.push({ role: "assistant", content: reply });
+
+            // Add related questions based on context
+            addRelatedQuestions(userMessage);
+          })
+          .catch(error => {
+            console.error('Error calling OpenRouter API:', error);
+            removeTypingIndicator();
+            addMessage("Sorry, I'm having trouble connecting to the server. Please try again later.", 'bot');
+          });
+      }
+
+      // Add related questions based on user message
+      function addRelatedQuestions(userMessage) {
+        const lowerCaseMessage = userMessage.toLowerCase();
+        let questions = [];
+
+        // Determine which set of questions to show based on context
+        if (/course|program|degree|study|curriculum/.test(lowerCaseMessage)) {
+          questions = relatedQuestionsDB.courses;
+        } else if (/admission|apply|application|enroll|eligibility/.test(lowerCaseMessage)) {
+          questions = relatedQuestionsDB.admissions;
+        } else if (/campus|facility|library|hostel|lab|sports|gym/.test(lowerCaseMessage)) {
+          questions = relatedQuestionsDB.facilities;
+        } else {
+          questions = relatedQuestionsDB.default;
+        }
+
+        // Create related questions container
+        const relatedDiv = document.createElement('div');
+        relatedDiv.className = 'related-questions';
+
+        // Add title
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'related-questions-title';
+        titleDiv.textContent = 'You might want to ask:';
+        relatedDiv.appendChild(titleDiv);
+
+        // Add question buttons
+        questions.forEach(question => {
+          const questionDiv = document.createElement('div');
+          questionDiv.className = 'related-question';
+          questionDiv.textContent = question;
+          questionDiv.addEventListener('click', function () {
+            // When clicked, send the question as a user message
+            addMessage(question, 'user');
+            conversationHistory.push({ role: "user", content: question });
+            showTypingIndicator();
+            fetchOpenRouterResponse(question);
+          });
+          relatedDiv.appendChild(questionDiv);
+        });
+
+        // Add to chat area
+        chatArea.appendChild(relatedDiv);
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+
+      // Add message to chat area
+      function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+        messageDiv.innerHTML = text;
+
+        // Add timestamp
+        const timestampDiv = document.createElement('div');
+        timestampDiv.classList.add('timestamp');
+        timestampDiv.textContent = getCurrentTime();
+        messageDiv.appendChild(timestampDiv);
+
+        chatArea.appendChild(messageDiv);
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+
+      // Show typing indicator
+      function showTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.classList.add('typing-indicator');
+        typingDiv.id = 'typing-indicator';
+        typingDiv.innerHTML = '<span></span><span></span><span></span>';
+        chatArea.appendChild(typingDiv);
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+
+      // Remove typing indicator
+      function removeTypingIndicator() {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+          typingIndicator.remove();
+        }
+      }
+
+      // Get current time in HH:MM format
+      function getCurrentTime() {
+        const now = new Date();
+        return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    });
+  </script>
+</body>
+
+</html>
